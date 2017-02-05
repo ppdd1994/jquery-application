@@ -1,0 +1,146 @@
+;(function () {
+    'use strict'
+    var form_add_task=$(".add-new"),
+        new_task={},
+        delete_icon,
+        detail_icon,
+        task_list;/*存储task*/
+
+    init();
+
+    form_add_task.on('submit',function (e) {
+        e.preventDefault();
+        new_task.content= $(this).find('input[name=content]').val();
+        if(!new_task.content) return;
+        add_task();
+        $(this).find('input[name=content]').val('');
+    });
+
+    function init() {
+        task_list=store.get('task_list') || [];
+        render_tlist(task_list);
+    }
+
+    function add_task() {
+        task_list.push(new_task.content);
+        refresh_list();
+    }
+
+    /*渲染单条list模板*/
+    function render_task_tpl(data,index) {
+        if(!data||!index) return;
+        var tpl='<div class="list-item" data-index="'+index+'">'+
+            '<span><input type="checkbox"></span>'+
+            '<span class="list-contain">'+
+            data+
+            '</span>'+
+            '<span class="detail">详情</span>'+
+            '<span class="delete">删除</span>'+
+            '</div>';
+        return tpl;
+    }
+
+    /*渲染单条更新模板*/
+    function render_task_detail(item,index) {
+        if(index==undefined||!task_list[index]) return;
+        var item = task_list[index];
+        var tpl='<div class="task-detail-mask">'+'</div>'+
+            '<form class="task-detail">'+
+            '<div class="content">'+item.content+'</div>'+
+            '<div class="desc">'+
+            '<textarea name="desc" class="desc" >'+item.desc+'</textarea>'+
+            '</div>'+
+            '<div class="remind">'+
+            '<p>Remind Me</p>'+
+            '<input type="date">'+
+            '<button class="update" type="submit">更新</button>'+
+            '</div>'+
+            '</div>'+
+            '</div>'+
+            '</form>';
+        $('.container').append(tpl);
+
+    }
+
+    /*渲染整个list 渲染结束后监听事件*/
+    function render_tlist() {
+        $('.task-list').html('');
+        for(var i=0; i<task_list.length ; i++){
+            var task_i =render_task_tpl(task_list[i],i);
+            $('.task-list').append(task_i);
+        };
+
+        listen_task_delete();
+        listen_task_detail();
+    }
+
+
+    /*刷新整个list和localstorage*/
+    function refresh_list(){
+        store.set('task_list',task_list);
+        render_tlist();
+    }
+
+    /*删除单条list*/
+    function delete_task(index) {
+        if (index === undefined || !task_list[index]) return;
+        delete task_list[index];
+        refresh_list();
+    }
+
+    /*监听删除事件*/
+    function listen_task_delete(){
+        delete_icon=$(".delete");
+        $(".delete").on('click',function () {
+            var $this = $(this),
+                index=$this.parent().data('index');
+            var tmp = confirm('确定删除？');
+            tmp?delete_task(index):null;
+        })
+    }
+
+    /*监听更新事件*/
+    function listen_task_detail() {
+        $(".detail").on('click',function(){
+            var index=$(this).parent().data('index'),
+                data={};
+            data.content=$(this).siblings('.list-contain').html();
+            // data.desc=$(this).parent().siblings('.task-list').find('[name=desc]').val();
+            render_task_detail(index);/*加载内容*/
+            $('.task-detail-mask').show();
+            $('.task-detail').show();
+            close_detail();
+
+
+
+            $('.task-detail').on('submit',function (e) {
+                e.preventDefault();
+                var data={};
+                data.desc=$(this).find('.desc');
+                task_list
+                update_task(data,index)
+
+
+            })
+        });
+
+
+    }
+    function close_detail() {
+        $('.task-detail-mask').on('click',function () {
+
+            $('.task-detail-mask').remove();
+            $('.task-detail').remove();
+        });
+    }
+
+    function update_task(data,index) {
+        if(!data||!task_list[index]) return;
+        task_list[index]=$.merge({},task_list[index],data);
+        store.set('test_list',test_list);
+        render_tlist(task_list);
+
+
+    }
+
+})();
